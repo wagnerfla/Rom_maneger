@@ -3,7 +3,7 @@ const path = require('path');
 
 const db = new Database(path.join(__dirname, '..','roms.db'));
 
-db.pragma('Jounal_mode = WAL');
+db.pragma('jounal_mode = WAL');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS roms (
@@ -36,21 +36,21 @@ function buscarRoms(filtros = {}) {
     const params = [];
 
     if (filtros.nome) {
-        query += 'AND nome LIKE ?';
+        query += ' AND nome LIKE ?';
         params.push(`%${filtros.nome}%`);
     }
 
     if (filtros.plataforma) {
-        query += 'AND plataforma = ?';
+        query += ' AND plataforma = ?';
         params.push(filtros.plataforma);
     }
 
     if (filtros.regiao) {
-        query += 'AND regiao = ?';
+        query += ' AND regiao = ?';
         params.push(filtros.regiao);
     }
 
-    query += 'ORDER BY nome ASC';
+    query += ' ORDER BY nome ASC';
     return db.prepare(query).all(...params);
 }
 

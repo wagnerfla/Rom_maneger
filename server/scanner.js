@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const {inserirRom} = require('./database');
-const { resolve } = require('dns');
 
 const EXTENSOES = {
     '.gba': 'GBA',
@@ -17,6 +16,10 @@ function calcularHash(caminho) {
     return new Promise((resolve, reject) => {
         const hash = crypto.createHash('md5');
         const stream = fs.createReadStream(caminho, {highWaterMark: 8192});
+
+        stream.on('data', (bloco) => hash.update(bloco));
+        stream.on('end', () => resolve(hash.digest('hex')));
+        stream.on('error', (err) => reject(err));
     });
 };
 
@@ -101,7 +104,7 @@ async function escanearPasta(pastaRaiz) {
     return resultado;
 };
 
-async function verificarIntregridade() {
+async function verificarIntegridade() {
     const {todasRoms} = require('./database');
     const roms = todasRoms();
     const resultado = [];
@@ -124,6 +127,6 @@ async function verificarIntregridade() {
     return resultado;
 };
 
-module.exports = {escanearPasta, verificarIntregridade};
+module.exports = {escanearPasta, verificarIntegridade};
 
 

@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const {buscarRoms, deletarRom, estatisticas} = require('./database');
-const {escanearPasta, verificarIntregridade} = require('./scanner');
+const {escanearPasta, verificarIntegridade} = require('./scanner');
 
 const app = express();
 const PORT = 3000;
