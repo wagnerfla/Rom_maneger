@@ -1,0 +1,70 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROM Manager</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>🎮 ROM Manager</h1>
+    <div id="stats-bar">Carregando...</div>
+  </header>
+
+  <main>
+    <!-- Ações -->
+    <div class="acoes">
+      <button onclick="escanear()" class="btn verde">📁 Escanear ROMs</button>
+      <button onclick="verificar()" class="btn roxo">🔍 Verificar Integridade</button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filtros">
+      <input id="busca-nome" placeholder="Buscar por nome..." oninput="buscar()">
+      <select id="busca-plataforma" onchange="buscar()">
+        <option value="">Todas as plataformas</option>
+        <option value="GBA">GBA</option>
+        <option value="NES">NES</option>
+        <option value="SNES">SNES</option>
+        <option value="N64">N64</option>
+        <option value="GameBoy">GameBoy</option>
+        <option value="Nintendo DS">Nintendo DS</option>
+      </select>
+      <select id="busca-regiao" onchange="buscar()">
+        <option value="">Todas as regiões</option>
+        <option value="USA">USA</option>
+        <option value="EUR">EUR</option>
+        <option value="JPN">JPN</option>
+        <option value="BRA">BRA</option>
+      </select>
+      <button onclick="limparFiltros()" class="btn cinza">✖ Limpar</button>
+    </div>
+
+    <!-- Mensagem de status -->
+    <div id="mensagem" class="mensagem oculto"></div>
+
+    <!-- Tabela -->
+    <div id="contagem"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nome</th>
+          <th>Plataforma</th>
+          <th>Região</th>
+          <th>Tamanho</th>
+          <th>Hash MD5</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-roms">
+        <tr><td colspan="7" class="centro">Clique em "Escanear ROMs" para começar</td></tr>
+      </tbody>
+    </table>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
