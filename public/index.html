@@ -1,70 +1,87 @@
-<!-- public/index.html -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ROM Manager</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROM Manager</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
+
+<header>
     <h1>🎮 ROM Manager</h1>
     <div id="stats-bar">Carregando...</div>
-  </header>
+</header>
 
-  <main>
-    <!-- Ações -->
+<main>
     <div class="acoes">
-      <button onclick="escanear()" class="btn verde">📁 Escanear ROMs</button>
-      <button onclick="verificar()" class="btn roxo">🔍 Verificar Integridade</button>
+        <div class="pasta-box">
+            <input id="input-caminho" class="input-pasta"
+                   placeholder="Cole o caminho da pasta — ex: C:\ROMs ou D:\Jogos\GBA">
+            <button onclick="confirmarPasta()" class="btn verde">
+                📁 Confirmar Pasta
+            </button>
+        </div>
+        <button id="btn-escanear" onclick="escanear()" class="btn azul" disabled>
+            🔍 Escanear ROMs
+        </button>
+        <button onclick="verificar()" class="btn roxo">
+            ✅ Verificar Integridade
+        </button>
     </div>
 
-    <!-- Filtros -->
-    <div class="filtros">
-      <input id="busca-nome" placeholder="Buscar por nome..." oninput="buscar()">
-      <select id="busca-plataforma" onchange="buscar()">
-        <option value="">Todas as plataformas</option>
-        <option value="GBA">GBA</option>
-        <option value="NES">NES</option>
-        <option value="SNES">SNES</option>
-        <option value="N64">N64</option>
-        <option value="GameBoy">GameBoy</option>
-        <option value="Nintendo DS">Nintendo DS</option>
-      </select>
-      <select id="busca-regiao" onchange="buscar()">
-        <option value="">Todas as regiões</option>
-        <option value="USA">USA</option>
-        <option value="EUR">EUR</option>
-        <option value="JPN">JPN</option>
-        <option value="BRA">BRA</option>
-      </select>
-      <button onclick="limparFiltros()" class="btn cinza">✖ Limpar</button>
-    </div>
-
-    <!-- Mensagem de status -->
+    <div id="pasta-confirmada" class="pasta-caminho oculto"></div>
     <div id="mensagem" class="mensagem oculto"></div>
 
-    <!-- Tabela -->
-    <div id="contagem"></div>
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Nome</th>
-          <th>Plataforma</th>
-          <th>Região</th>
-          <th>Tamanho</th>
-          <th>Hash MD5</th>
-          <th>Ação</th>
-        </tr>
-      </thead>
-      <tbody id="tabela-roms">
-        <tr><td colspan="7" class="centro">Clique em "Escanear ROMs" para começar</td></tr>
-      </tbody>
-    </table>
-  </main>
+    <div class="filtros">
+        <input id="busca-nome" placeholder="Buscar por nome..." oninput="buscar()">
+        <select id="busca-plataforma" onchange="buscar()">
+            <option value="">Todas as plataformas</option>
+            <option value="GBA">GBA</option>
+            <option value="GameBoy">GameBoy</option>
+            <option value="GameBoy Color">GameBoy Color</option>
+            <option value="NES">NES</option>
+            <option value="SNES">SNES</option>
+            <option value="N64">N64</option>
+            <option value="Nintendo DS">Nintendo DS</option>
+            <option value="3DS">3DS</option>
+            <option value="PS1">PS1</option>
+            <option value="PS2">PS2</option>
+        </select>
+        <select id="busca-regiao" onchange="buscar()">
+            <option value="">Todas as regiões</option>
+            <option value="USA">USA</option>
+            <option value="EUR">EUR</option>
+            <option value="JPN">JPN</option>
+            <option value="BRA">BRA</option>
+            <option value="World">World</option>
+        </select>
+        <button onclick="limparFiltros()" class="btn cinza">✖ Limpar</button>
+    </div>
 
-  <script src="app.js"></script>
+    <div id="contagem"></div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Nome</th>
+                <th>Plataforma</th>
+                <th>Região</th>
+                <th>Tamanho</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody id="tabela-roms">
+            <tr>
+                <td colspan="6" class="centro">
+                    Informe uma pasta e clique em "Escanear ROMs"
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</main>
+
+<script src="app.js"></script>
 </body>
 </html>

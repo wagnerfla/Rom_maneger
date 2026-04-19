@@ -1,68 +1,101 @@
-/* public/style.css */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  background: #1a1a2e;
-  color: #eee;
-  min-height: 100vh;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
 }
 
 header {
-  background: #0f3460;
-  padding: 15px 30px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 3px solid #e94560;
+    background: #0f3460;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 3px solid #e94560;
 }
-
-header h1 { color: #e94560; font-size: 1.5rem; }
+header h1  { color: #e94560; font-size: 1.5rem; }
 #stats-bar { color: #aaa; font-size: 0.9rem; }
 
 main { padding: 20px 30px; }
 
-.acoes { display: flex; gap: 10px; margin-bottom: 15px; }
-
-.filtros {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-  flex-wrap: wrap;
+.acoes {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
 }
 
+.pasta-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.input-pasta {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #333;
+    background: #16213e;
+    color: #eee;
+    font-size: 0.9rem;
+    min-width: 250px;
+}
+
+.pasta-caminho {
+    font-size: 0.85rem;
+    color: #aaa;
+    background: #16213e;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #333;
+    margin-bottom: 10px;
+}
+
+.filtros {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
 .filtros input,
 .filtros select {
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #333;
-  background: #16213e;
-  color: #eee;
-  flex: 1;
-  min-width: 150px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #333;
+    background: #16213e;
+    color: #eee;
+    flex: 1;
+    min-width: 150px;
 }
 
 .btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: bold;
-  transition: opacity 0.2s;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: bold;
+    transition: opacity 0.2s;
 }
-.btn:hover  { opacity: 0.85; }
-.btn.verde  { background: #27ae60; color: white; }
-.btn.roxo   { background: #8e44ad; color: white; }
-.btn.cinza  { background: #555;    color: white; }
+.btn:hover    { opacity: 0.85; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn.verde    { background: #27ae60; color: white; }
+.btn.azul     { background: #2980b9; color: white; }
+.btn.roxo     { background: #8e44ad; color: white; }
+.btn.cinza    { background: #555;    color: white; }
 .btn.vermelho { background: #e74c3c; color: white; }
-.btn.pequeno  { font-size: 0.75rem; padding: 5px 10px; }
+.btn.pequeno  { font-size: 0.75rem;  padding: 5px 10px; }
 
 .mensagem {
-  padding: 12px 16px;
-  border-radius: 6px;
-  margin-bottom: 15px;
-  font-weight: bold;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-weight: bold;
 }
 .mensagem.oculto  { display: none; }
 .mensagem.sucesso { background: #1e8449; }
@@ -71,21 +104,30 @@ main { padding: 20px 30px; }
 .mensagem.info    { background: #1a5276; }
 
 #contagem { color: #aaa; font-size: 0.85rem; margin-bottom: 8px; }
+.oculto   { display: none; }
 
 table { width: 100%; border-collapse: collapse; }
-th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #2c2c54; }
+th, td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #2c2c54;
+}
 th { background: #0f3460; font-size: 0.85rem; text-transform: uppercase; }
 tr:hover { background: #16213e; }
 
-.nome { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hash { font-family: monospace; font-size: 0.8rem; color: #888; }
+.nome {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .centro { text-align: center; color: #888; padding: 30px; }
 
 .badge {
-  background: #e94560;
-  color: white;
-  padding: 3px 8px;
-  border-radius: 10px;
-  font-size: 0.75rem;
-  font-weight: bold;
+    background: #e94560;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: bold;
 }

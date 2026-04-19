@@ -1,84 +1,132 @@
-const Database = require('better-sqlite3');
-const path = require('path');
+const path      = require('path');
+const fs        = require('fs');
+const initSqlJs = require('sql.js');
 
-const db = new Database(path.join(__dirname, '..','roms.db'));
+const DB_PATH = path.join(__dirname, '..', 'roms.db');
+let db;
 
-db.pragma('jounal_mode = WAL');
+async function iniciarBanco() {
+    const SQL = await initSqlJs();
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS roms (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome        TEXT NOT NULL,
-    plataforma  TEXT NOT NULL,
-    regiao      TEXT DEFAULT 'Desconhecida',
-    caminho     TEXT NOT NULL,
-    extensao    TEXT,
-    tamanho     INTEGER DEFAULT 0,
-    hash_md5    TEXT UNIQUE,
-    data_adicao TEXT DEFAULT (datetime('now'))
-  )
-`);
+    if (fs.existsSync(DB_PATH)) {
+        const buffer = fs.readFileSync(DB_PATH);
+        db = new SQL.Database(buffer);
+    } else {
+        db = new SQL.Database();
+    }
 
-function inserirRom(dados) {
-    const stmt =db.prepare(`
-        INSERT OR IGNORE INTO roms
-        (nome, plataforma, regiao, caminho, extensao, tamanho, hash_md5)
-        VALUES
-        (@nome, @plataforma, @regiao, @caminho, @extensao, @tamanho, @hash_md5)
+    db.run(`
+        CREATE TABLE IF NOT EXISTS roms (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome        TEXT NOT NULL,
+            plataforma  TEXT NOT NULL,
+            regiao      TEXT DEFAULT 'Desconhecida',
+            caminho     TEXT NOT NULL,
+            extensao    TEXT,
+            tamanho     INTEGER DEFAULT 0,
+            hash_md5    TEXT UNIQUE,
+            data_adicao TEXT DEFAULT (datetime('now'))
+        )
     `);
 
-    const resultado = stmt.run(dados);
-    return resultado.changes > 0;
+    salvarBanco();
+    console.log('✅ Banco de dados pronto!');
+}
+
+function salvarBanco() {
+    const data = db.export();
+    fs.writeFileSync(DB_PATH, Buffer.from(data));
+}
+
+function inserirRom(dados) {
+    try {
+        db.run(`
+            INSERT OR IGNORE INTO roms
+                (nome, plataforma, regiao, caminho, extensao, tamanho, hash_md5)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [dados.nome, dados.plataforma, dados.regiao, dados.caminho,
+            dados.extensao, dados.tamanho, dados.hash_md5]);
+
+        salvarBanco();
+        const changes = db.exec('SELECT changes()')[0]?.values[0][0];
+        return changes > 0;
+    } catch (err) {
+        console.error('Erro ao inserir:', err.message);
+        return false;
+    }
 }
 
 function buscarRoms(filtros = {}) {
-    let query = 'SELECT * FROM roms WHERE 1=1';
+    let query    = 'SELECT * FROM roms WHERE 1=1';
     const params = [];
 
     if (filtros.nome) {
         query += ' AND nome LIKE ?';
         params.push(`%${filtros.nome}%`);
     }
-
     if (filtros.plataforma) {
         query += ' AND plataforma = ?';
         params.push(filtros.plataforma);
     }
-
     if (filtros.regiao) {
         query += ' AND regiao = ?';
         params.push(filtros.regiao);
     }
 
     query += ' ORDER BY nome ASC';
-    return db.prepare(query).all(...params);
+
+    const res = db.exec(query, params);
+    if (!res.length) return [];
+
+    const cols = res[0].columns;
+    return res[0].values.map(row => {
+        const obj = {};
+        cols.forEach((col, i) => obj[col] = row[i]);
+        return obj;
+    });
 }
 
 function todasRoms() {
-    return db.prepare('SELECT * FROM roms').all();
+    const res = db.exec('SELECT * FROM roms');
+    if (!res.length) return [];
+
+    const cols = res[0].columns;
+    return res[0].values.map(row => {
+        const obj = {};
+        cols.forEach((col, i) => obj[col] = row[i]);
+        return obj;
+    });
 }
 
 function deletarRom(id) {
-    return db.prepare('DELETE FROM roms WHERE id = ?').run(id);
+    db.run('DELETE FROM roms WHERE id = ?', [id]);
+    salvarBanco();
 }
 
 function estatisticas() {
-    const total = db.prepare('SELECT COUNT(*) as total FROM roms').get();
-    const porPlataforma = db.prepare(`
-        SELECT plataforma, COUNT(*) as quantidade
-        FROM roms
-        GROUP BY plataforma
-        ORDER BY quantidade DESC`).all();
-    const porRegiao = db.prepare(`
-         SELECT regiao, COUNT(*) as quantidade
-           FROM roms
-        GROUP BY regiao
-        ORDER BY quantidade DESC`).all();
-    const tamanhoTotal = db.prepare(
-        'SELECT SUM(tamanho) as total FROM roms'
-    ).get();
+    const totalRes     = db.exec('SELECT COUNT(*) FROM roms');
+    const total        = totalRes[0]?.values[0][0] || 0;
 
-    return {total: total.total, porPlataforma, porRegiao, tamanhoTotal: tamanhoTotal.total};
+    const platRes      = db.exec(`
+        SELECT plataforma, COUNT(*) as quantidade
+        FROM roms GROUP BY plataforma ORDER BY quantidade DESC
+    `);
+    const porPlataforma = platRes[0]?.values.map(r => ({
+        plataforma: r[0], quantidade: r[1]
+    })) || [];
+
+    const regRes       = db.exec(`
+        SELECT regiao, COUNT(*) as quantidade
+        FROM roms GROUP BY regiao ORDER BY quantidade DESC
+    `);
+    const porRegiao    = regRes[0]?.values.map(r => ({
+        regiao: r[0], quantidade: r[1]
+    })) || [];
+
+    const tamRes       = db.exec('SELECT SUM(tamanho) FROM roms');
+    const tamanhoTotal = tamRes[0]?.values[0][0] || 0;
+
+    return { total, porPlataforma, porRegiao, tamanhoTotal };
 }
 
-module.exports = {inserirRom, buscarRoms, todasRoms, deletarRom, estatisticas};
+module.exports = { iniciarBanco, inserirRom, buscarRoms, todasRoms, deletarRom, estatisticas };
