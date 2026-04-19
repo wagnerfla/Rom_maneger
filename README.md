@@ -5,7 +5,7 @@ Gerenciador de ROMs local usando Node.js + SQLite.
 ## Instalação
 
 1. Clone o repositório
-   git clone https://github.com/seuusuario/rom-manager.git
+   git clone https://github.com/wagnerfla/Rom_maneger.git
 
 2. Instale as dependências
    npm install
