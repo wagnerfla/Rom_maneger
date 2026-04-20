@@ -1,9 +1,10 @@
 // server/scanner.js
-const fs           = require('fs');
-const path         = require('path');
-const crypto       = require('crypto');
-const { inserirRom } = require('./database');
-const { validarRom } = require('./validador');
+const fs     = require('fs');
+const path   = require('path');
+const crypto = require('crypto');
+const { inserirRom, buscarRoms, atualizarMetadados } = require('./database');
+const { buscarMetadados } = require('./metadata');
+const { validarRom }      = require('./validador');
 
 const EXTENSOES = {
     '.gba': 'GBA',
@@ -79,7 +80,7 @@ async function escanearPasta(pastaRaiz) {
         resultado.total++;
         const nomeArquivo = path.basename(caminho, ext);
 
-        // ✅ Valida antes de processar
+        // Valida se é realmente uma ROM antes de processar
         if (!validarRom(caminho, ext)) {
             resultado.ignorados++;
             console.log(`⛔ Ignorado (não é ROM): ${nomeArquivo}${ext}`);
@@ -106,6 +107,17 @@ async function escanearPasta(pastaRaiz) {
                 resultado.novos++;
                 resultado.lista.push({ ...dados, status: 'novo' });
                 console.log(`✅ ${nomeArquivo} [${EXTENSOES[ext]}]`);
+
+                // Busca metadados automaticamente após inserir
+                const meta = await buscarMetadados(nomeArquivo, EXTENSOES[ext]);
+                if (meta) {
+                    const roms = buscarRoms({ nome: nomeArquivo });
+                    if (roms.length > 0) {
+                        atualizarMetadados(roms[0].id, meta);
+                        console.log(`   🖼️  Capa salva | 📝 ${meta.nota || 'sem classificação'}`);
+                    }
+                }
+
             } else {
                 resultado.duplicatas++;
                 resultado.lista.push({ nome: nomeArquivo, status: 'duplicata' });

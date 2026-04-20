@@ -1,5 +1,5 @@
-const path      = require('path');
-const fs        = require('fs');
+const path = require('path');
+const fs = require('fs');
 const initSqlJs = require('sql.js');
 
 const DB_PATH = path.join(__dirname, '..', 'roms.db');
@@ -25,6 +25,9 @@ async function iniciarBanco() {
             extensao    TEXT,
             tamanho     INTEGER DEFAULT 0,
             hash_md5    TEXT UNIQUE,
+            capa  TEXT DEFAULT NULL,
+            nota TEXT DEFAULT NULL,
+            descricao TEXT DEFAULT NULL,
             data_adicao TEXT DEFAULT (datetime('now'))
         )
     `);
@@ -45,7 +48,7 @@ function inserirRom(dados) {
                 (nome, plataforma, regiao, caminho, extensao, tamanho, hash_md5)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `, [dados.nome, dados.plataforma, dados.regiao, dados.caminho,
-            dados.extensao, dados.tamanho, dados.hash_md5]);
+        dados.extensao, dados.tamanho, dados.hash_md5]);
 
         salvarBanco();
         const changes = db.exec('SELECT changes()')[0]?.values[0][0];
@@ -57,7 +60,7 @@ function inserirRom(dados) {
 }
 
 function buscarRoms(filtros = {}) {
-    let query    = 'SELECT * FROM roms WHERE 1=1';
+    let query = 'SELECT * FROM roms WHERE 1=1';
     const params = [];
 
     if (filtros.nome) {
@@ -104,10 +107,10 @@ function deletarRom(id) {
 }
 
 function estatisticas() {
-    const totalRes     = db.exec('SELECT COUNT(*) FROM roms');
-    const total        = totalRes[0]?.values[0][0] || 0;
+    const totalRes = db.exec('SELECT COUNT(*) FROM roms');
+    const total = totalRes[0]?.values[0][0] || 0;
 
-    const platRes      = db.exec(`
+    const platRes = db.exec(`
         SELECT plataforma, COUNT(*) as quantidade
         FROM roms GROUP BY plataforma ORDER BY quantidade DESC
     `);
@@ -115,18 +118,31 @@ function estatisticas() {
         plataforma: r[0], quantidade: r[1]
     })) || [];
 
-    const regRes       = db.exec(`
+    const regRes = db.exec(`
         SELECT regiao, COUNT(*) as quantidade
         FROM roms GROUP BY regiao ORDER BY quantidade DESC
     `);
-    const porRegiao    = regRes[0]?.values.map(r => ({
+    const porRegiao = regRes[0]?.values.map(r => ({
         regiao: r[0], quantidade: r[1]
     })) || [];
 
-    const tamRes       = db.exec('SELECT SUM(tamanho) FROM roms');
+    const tamRes = db.exec('SELECT SUM(tamanho) FROM roms');
     const tamanhoTotal = tamRes[0]?.values[0][0] || 0;
 
     return { total, porPlataforma, porRegiao, tamanhoTotal };
 }
 
-module.exports = { iniciarBanco, inserirRom, buscarRoms, todasRoms, deletarRom, estatisticas };
+function atualizarMetadados(id, { capa, nota, descricao }) {
+    db.run(
+        'UPDATE roms SET capa = ?, nota = ?, descricao = ? WHERE id = ?',
+        [capa, nota, descricao, id]
+    );
+    salvarBanco();
+};
+
+function atualizarCapa(id, capa) {
+    db.run('UPDATE roms SET capa = ? WHERE id = ?', [capa, id]);
+    salvarBanco();
+};
+
+module.exports = { iniciarBanco, inserirRom, buscarRoms, todasRoms, deletarRom, atualizarMetadados, atualizarCapa, estatisticas };

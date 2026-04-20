@@ -2,8 +2,9 @@ const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
 const fs      = require('fs');
-const { iniciarBanco, buscarRoms, deletarRom, estatisticas } = require('./database');
+const { iniciarBanco, buscarRoms, deletarRom, estatisticas, atualizarMetadados, atualizarCapa } = require('./database');
 const { escanearPasta, verificarIntegridade } = require('./scanner');
+const { buscarMetadados } = require('./metadata');
 
 const app  = express();
 const PORT = 3000;
@@ -22,7 +23,7 @@ app.get('/api/roms', (req, res) => {
     res.json({ sucesso: true, total: roms.length, roms });
 });
 
-// ✅ Agora recebe o caminho do frontend
+
 app.post('/api/escanear', async (req, res) => {
     const { caminho } = req.body;
 
@@ -58,7 +59,36 @@ app.get('/api/stats', (req, res) => {
     res.json({ sucesso: true, ...stats });
 });
 
-// Inicia o banco e depois sobe o servidor
+app.post('/api/roms/:id/metadados', async (req, res) => {
+    const { nome, plataforma } = req.body;
+    const meta = await buscarMetadados(nome, plataforma || '');
+
+    if (!meta) {
+        return res.json({ sucesso: false, mensagem: 'Metadados não encontrados' });
+    };
+
+    atualizarMetadados(Number(req.params.id), meta);
+    res.json({ sucesso: true, ...meta});
+});
+
+app.patch('/api/roms/:id/capa', (req, res) => {
+    const { capa } = req.body;
+
+    if (!capa) {
+        return res.json({ sucesso: false, mensagem: 'URL da capa não informada' });
+    }
+
+    try {
+        new URL(capa);
+    } catch {
+        return res.json({ sucesso: false, mensagem: 'URL invalida' });
+    }
+
+    atualizarCapa(Number(req.params.id), capa);
+    res.json({ sucesso: true, mensagem: 'Capa atualizada' });
+});
+
+
 iniciarBanco().then(() => {
     app.listen(PORT, () => {
         console.log(`\n🎮 ROM Manager rodando em http://localhost:${PORT}\n`);

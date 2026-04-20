@@ -28,6 +28,9 @@
         <button onclick="verificar()" class="btn roxo">
             ✅ Verificar Integridade
         </button>
+<button onclick="buscarMetaTodos()" class="btn amarelo">
+    🔄 Buscar Info em Todos
+</button>
     </div>
 
     <div id="pasta-confirmada" class="pasta-caminho oculto"></div>
@@ -61,7 +64,7 @@
 
     <div id="contagem"></div>
 
-    <table>
+    <div id="tabela-roms">
         <thead>
             <tr>
                 <th>#</th>
@@ -79,7 +82,7 @@
                 </td>
             </tr>
         </tbody>
-    </table>
+    </div>
 </main>
 
 <script src="app.js"></script>
