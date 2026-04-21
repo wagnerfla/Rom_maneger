@@ -1,8 +1,8 @@
-// server/scanner.js
-const fs     = require('fs');
-const path   = require('path');
-const crypto = require('crypto');
-const { inserirRom, buscarRoms, atualizarMetadados } = require('./database');
+// server/services/scanner.js
+const fs       = require('fs');
+const path     = require('path');
+const crypto   = require('crypto');
+const romModel = require('../models/romModel');
 const { buscarMetadados } = require('./metadata');
 const { validarRom }      = require('./validador');
 
@@ -80,10 +80,9 @@ async function escanearPasta(pastaRaiz) {
         resultado.total++;
         const nomeArquivo = path.basename(caminho, ext);
 
-        // Valida se é realmente uma ROM antes de processar
         if (!validarRom(caminho, ext)) {
             resultado.ignorados++;
-            console.log(`⛔ Ignorado (não é ROM): ${nomeArquivo}${ext}`);
+            console.log(`⛔ Ignorado: ${nomeArquivo}${ext}`);
             continue;
         }
 
@@ -101,23 +100,21 @@ async function escanearPasta(pastaRaiz) {
                 hash_md5:   hash,
             };
 
-            const inserido = inserirRom(dados);
+            const inserido = romModel.inserirRom(dados);
 
             if (inserido) {
                 resultado.novos++;
                 resultado.lista.push({ ...dados, status: 'novo' });
                 console.log(`✅ ${nomeArquivo} [${EXTENSOES[ext]}]`);
 
-                // Busca metadados automaticamente após inserir
                 const meta = await buscarMetadados(nomeArquivo, EXTENSOES[ext]);
                 if (meta) {
-                    const roms = buscarRoms({ nome: nomeArquivo });
+                    const roms = romModel.buscarRoms({ nome: nomeArquivo });
                     if (roms.length > 0) {
-                        atualizarMetadados(roms[0].id, meta);
+                        romModel.atualizarMetadados(roms[0].id, meta);
                         console.log(`   🖼️  Capa salva | 📝 ${meta.nota || 'sem classificação'}`);
                     }
                 }
-
             } else {
                 resultado.duplicatas++;
                 resultado.lista.push({ nome: nomeArquivo, status: 'duplicata' });
@@ -134,8 +131,7 @@ async function escanearPasta(pastaRaiz) {
 }
 
 async function verificarIntegridade() {
-    const { todasRoms } = require('./database');
-    const roms      = todasRoms();
+    const roms      = romModel.todasRoms();
     const resultado = [];
 
     for (const rom of roms) {

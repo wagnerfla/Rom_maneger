@@ -1,4 +1,4 @@
-// server/metadata.js
+// server/services/metadata.js
 require('dotenv').config();
 const axios = require('axios');
 
@@ -26,7 +26,6 @@ function limparNome(nome) {
         .trim();
 }
 
-// ✅ Função buscarJogo — busca o jogo pelo nome
 async function buscarJogo(nomeLimpo, plataforma) {
     const params = {
         apikey: API_KEY,
@@ -38,12 +37,10 @@ async function buscarJogo(nomeLimpo, plataforma) {
     if (plataformaId) params['filter[platform]'] = plataformaId;
 
     const res = await axios.get(`${BASE_URL}/Games/ByGameName`, { params });
-
     if (!res.data?.data?.games?.length) return null;
     return res.data.data.games[0];
 }
 
-// ✅ Função buscarCapa — busca a imagem da capa pelo ID do jogo
 async function buscarCapa(jogoId) {
     const res = await axios.get(`${BASE_URL}/Games/Images`, {
         params: {
@@ -64,22 +61,19 @@ async function buscarCapa(jogoId) {
     return capa ? `${baseUrl}${capa.filename}` : null;
 }
 
-// ✅ Função principal — usa buscarJogo e buscarCapa
 async function buscarMetadados(nomeRom, plataforma = '') {
     const nomeLimpo = limparNome(nomeRom);
     console.log(`   🔍 Buscando: "${nomeLimpo}" [${plataforma}]`);
 
     try {
         const jogo = await buscarJogo(nomeLimpo, plataforma);
-
         if (!jogo) {
             console.log(`   ⚠️  Nenhum resultado para "${nomeLimpo}"`);
             return null;
         }
 
         console.log(`   ✅ Encontrado: "${jogo.game_title}"`);
-
-        const capa = await buscarCapa(jogo.id); // ← agora funciona
+        const capa = await buscarCapa(jogo.id);
 
         return {
             capa:      capa          || null,
