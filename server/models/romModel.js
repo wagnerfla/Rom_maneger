@@ -1,7 +1,8 @@
-const { getDB, salvarBanco } = require('./database');
+// server/models/romModel.js
+const { getDb, salvarBanco } = require('./database'); 
 
 function inserirRom(dados) {
-    const db = getDB();
+    const db = getDb();
     try {
         db.run(`
             INSERT OR IGNORE INTO roms
@@ -19,7 +20,7 @@ function inserirRom(dados) {
         console.error('Erro ao inserir ROM:', err.message);
         return false;
     }
-};
+}
 
 function buscarRoms(filtros = {}) {
     const db     = getDb();
@@ -100,10 +101,10 @@ function registrarAcesso(id) {
 function estatisticas() {
     const db = getDb();
 
-    const totalRes     = db.exec('SELECT COUNT(*) FROM roms');
-    const total        = totalRes[0]?.values[0][0] || 0;
+    const totalRes      = db.exec('SELECT COUNT(*) FROM roms');
+    const total         = totalRes[0]?.values[0][0] || 0;
 
-    const platRes      = db.exec(`
+    const platRes       = db.exec(`
         SELECT plataforma, COUNT(*) as quantidade
         FROM roms GROUP BY plataforma ORDER BY quantidade DESC
     `);
@@ -125,4 +126,13 @@ function estatisticas() {
     return { total, porPlataforma, porRegiao, tamanhoTotal };
 }
 
-module.exports = {inserirRom, buscarRoms, todasRoms, deletarRom, atualizarMetadados, atualizarCapa, registrarAcesso, estatisticas };
+module.exports = {
+    inserirRom,
+    buscarRoms,
+    todasRoms,
+    deletarRom,
+    atualizarMetadados,
+    atualizarCapa,
+    registrarAcesso,
+    estatisticas
+};

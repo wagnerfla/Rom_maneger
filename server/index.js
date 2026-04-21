@@ -13,10 +13,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// Todas as rotas de ROM em /api/roms
-app.use('/api/roms', romRoutes);
+app.use('/api/roms', romRoutes); 
 
-// Inicia o banco e sobe o servidor
 iniciarBanco().then(() => {
     app.listen(PORT, () => {
         console.log(`\n🎮 ROM Manager rodando em http://localhost:${PORT}\n`);
