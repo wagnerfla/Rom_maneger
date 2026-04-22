@@ -5,23 +5,32 @@ let pastaSelecionada = null;
 document.addEventListener('DOMContentLoaded', () => {
     buscar();
     carregarStats();
+
+    const inputCaminho = document.getElementById('input-caminho');
+    inputCaminho?.addEventListener('input', () => {
+        const val = inputCaminho.value.trim();
+        pastaSelecionada = val || null;
+        document.getElementById('btn-escanear').disabled = !val;
+    });
 });
 
 // ─── PASTA ─────────────────────────────────────────────────────
-function confirmarPasta() {
-    const caminho = document.getElementById('input-caminho').value.trim();
-
-    if (!caminho) {
-        mostrarMensagem('⚠️ Digite o caminho da pasta.', 'aviso');
+async function selecionarPastaDialog() {
+    if (!window.electronAPI) {
+        mostrarMensagem('⚠️ Seleção de pasta só funciona no app desktop.', 'aviso');
         return;
     }
 
+    const caminho = await window.electronAPI.selecionarPasta();
+    if (!caminho) return;
+
     pastaSelecionada = caminho;
+    document.getElementById('input-caminho').value = caminho;
     const el = document.getElementById('pasta-confirmada');
     el.textContent = `📁 Pasta: ${caminho}`;
     el.classList.remove('oculto');
     document.getElementById('btn-escanear').disabled = false;
-    mostrarMensagem(`✅ Pasta confirmada!`, 'sucesso');
+    mostrarMensagem(`✅ Pasta selecionada: ${caminho}`, 'sucesso');
 }
 
 // ─── ESCANEAR ──────────────────────────────────────────────────

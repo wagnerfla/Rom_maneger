@@ -16,9 +16,12 @@
 <main>
     <div class="acoes">
         <div class="pasta-box">
-            <input id="input-caminho" class="input-pasta"
-                   placeholder="Cole o caminho da pasta — ex: C:\ROMs ou D:\Jogos\GBA">
-            <button onclick="confirmarPasta()" class="btn verde">
+            <input
+                id="input-caminho"
+                class="input-pasta"
+                placeholder="Cole o caminho da pasta — ex: C:\ROMs ou D:\Jogos\GBA"
+            >
+            <button onclick="selecionarPastaDialog()" class="btn verde">
                 📁 Confirmar Pasta
             </button>
         </div>
@@ -28,9 +31,9 @@
         <button onclick="verificar()" class="btn roxo">
             ✅ Verificar Integridade
         </button>
-<button onclick="buscarMetaTodos()" class="btn amarelo">
-    🔄 Buscar Info em Todos
-</button>
+        <button onclick="buscarMetaTodos()" class="btn amarelo">
+            🔄 Buscar Info em Todos
+        </button>
     </div>
 
     <div id="pasta-confirmada" class="pasta-caminho oculto"></div>
@@ -63,26 +66,7 @@
     </div>
 
     <div id="contagem"></div>
-
-    <div id="tabela-roms">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Nome</th>
-                <th>Plataforma</th>
-                <th>Região</th>
-                <th>Tamanho</th>
-                <th>Ação</th>
-            </tr>
-        </thead>
-        <tbody id="tabela-roms">
-            <tr>
-                <td colspan="6" class="centro">
-                    Informe uma pasta e clique em "Escanear ROMs"
-                </td>
-            </tr>
-        </tbody>
-    </div>
+    <div id="tabela-roms"></div>
 </main>
 
 <script src="app.js"></script>
