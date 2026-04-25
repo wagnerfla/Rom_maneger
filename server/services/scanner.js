@@ -24,14 +24,53 @@ const EXTENSOES = {
     '.iso': 'PS2',
 };
 
-function calcularHash(caminho) {
-    return new Promise((resolve, reject) => {
-        const hash   = crypto.createHash('md5');
-        const stream = fs.createReadStream(caminho, { highWaterMark: 8192 });
+const TAMANHO_AMOSTRA = 4 * 1024 * 1024; // 4MB por amostra
 
-        stream.on('data',  bloco => hash.update(bloco));
-        stream.on('end',   ()    => resolve(hash.digest('hex')));
-        stream.on('error', err   => reject(err));
+async function calcularHash(caminho) {
+    const tamanho = fs.statSync(caminho).size;
+
+    // Arquivos pequenos — lê tudo
+    if (tamanho <= TAMANHO_AMOSTRA * 3) {
+        return new Promise((resolve, reject) => {
+            const hash   = crypto.createHash('md5');
+            const stream = fs.createReadStream(caminho, { highWaterMark: 65536 });
+
+            stream.on('data',  bloco => hash.update(bloco));
+            stream.on('end',   ()    => resolve(hash.digest('hex')));
+            stream.on('error', err   => reject(err));
+        });
+    }
+
+    // Arquivos grandes — lê início, meio e fim
+    return new Promise((resolve, reject) => {
+        try {
+            const hash   = crypto.createHash('md5');
+            const fd     = fs.openSync(caminho, 'r');
+            const buffer = Buffer.alloc(TAMANHO_AMOSTRA);
+
+            // Início
+            fs.readSync(fd, buffer, 0, TAMANHO_AMOSTRA, 0);
+            hash.update(buffer);
+
+            // Meio
+            const posicaoMeio = Math.floor(tamanho / 2) - Math.floor(TAMANHO_AMOSTRA / 2);
+            fs.readSync(fd, buffer, 0, TAMANHO_AMOSTRA, posicaoMeio);
+            hash.update(buffer);
+
+            // Fim
+            const posicaoFim = tamanho - TAMANHO_AMOSTRA;
+            fs.readSync(fd, buffer, 0, TAMANHO_AMOSTRA, posicaoFim);
+            hash.update(buffer);
+
+            // Inclui o tamanho para evitar colisões
+            hash.update(tamanho.toString());
+
+            fs.closeSync(fd);
+            resolve(hash.digest('hex'));
+
+        } catch (err) {
+            reject(err);
+        }
     });
 }
 
@@ -69,62 +108,110 @@ function listarArquivos(pasta) {
     return arquivos;
 }
 
+async function processarEmLote(itens, limite, funcao) {
+    const resultados = [];
+
+    for (let i = 0; i < itens.length; i += limite) {
+        const lote = itens.slice(i, i + limite);
+        const res  = await Promise.all(lote.map(funcao));
+        resultados.push(...res);
+    }
+
+    return resultados;
+}
+
+async function processarRom(caminho) {
+    const ext         = path.extname(caminho).toLowerCase();
+    const nomeArquivo = path.basename(caminho, ext);
+
+    if (!EXTENSOES[ext]) return null;
+
+    if (!validarRom(caminho, ext)) {
+        console.log(`⛔ Ignorado: ${nomeArquivo}${ext}`);
+        return { status: 'ignorado', nome: nomeArquivo };
+    }
+
+    try {
+        const hash    = await calcularHash(caminho);
+        const tamanho = fs.statSync(caminho).size;
+
+        const dados = {
+            nome:       nomeArquivo,
+            plataforma: EXTENSOES[ext],
+            regiao:     extrairRegiao(nomeArquivo),
+            caminho,
+            extensao:   ext,
+            tamanho,
+            hash_md5:   hash,
+        };
+
+        const inserido = romModel.inserirRom(dados);
+
+        if (inserido) {
+            console.log(`✅ ${nomeArquivo} [${EXTENSOES[ext]}]`);
+            return { status: 'novo', dados };
+        } else {
+            console.log(`⚠️  Duplicata: ${nomeArquivo}`);
+            return { status: 'duplicata', nome: nomeArquivo };
+        }
+
+    } catch (err) {
+        console.error(`❌ Erro em ${nomeArquivo}:`, err.message);
+        return { status: 'erro', nome: nomeArquivo };
+    }
+}
+
+async function buscarMetadatasEmLote(novas) {
+    await processarEmLote(novas, 3, async ({ dados }) => {
+        try {
+            const meta = await buscarMetadados(dados.nome, dados.plataforma);
+            if (meta) {
+                const roms = romModel.buscarRoms({ nome: dados.nome });
+                if (roms.length > 0) {
+                    romModel.atualizarMetadados(roms[0].id, meta);
+                    console.log(`   🖼️  Capa salva: ${dados.nome}`);
+                }
+            }
+        } catch (err) {
+            console.error(`   ❌ Erro metadados ${dados.nome}:`, err.message);
+        }
+    });
+}
+
 async function escanearPasta(pastaRaiz) {
     const arquivos  = listarArquivos(pastaRaiz);
     const resultado = { total: 0, novos: 0, duplicatas: 0, erros: 0, ignorados: 0, lista: [] };
 
-    for (const caminho of arquivos) {
-        const ext = path.extname(caminho).toLowerCase();
-        if (!EXTENSOES[ext]) continue;
+    const candidatos = arquivos.filter(a =>
+        EXTENSOES[path.extname(a).toLowerCase()]
+    );
 
-        resultado.total++;
-        const nomeArquivo = path.basename(caminho, ext);
+    resultado.total = candidatos.length;
+    console.log(`\n📦 ${candidatos.length} arquivos encontrados\n`);
 
-        if (!validarRom(caminho, ext)) {
+    const resultados = await processarEmLote(candidatos, 5, processarRom);
+
+    const novas = [];
+    for (const r of resultados) {
+        if (!r) continue;
+
+        if (r.status === 'novo') {
+            resultado.novos++;
+            novas.push(r);
+            resultado.lista.push({ ...r.dados, status: 'novo' });
+        } else if (r.status === 'duplicata') {
+            resultado.duplicatas++;
+            resultado.lista.push({ nome: r.nome, status: 'duplicata' });
+        } else if (r.status === 'ignorado') {
             resultado.ignorados++;
-            console.log(`⛔ Ignorado: ${nomeArquivo}${ext}`);
-            continue;
-        }
-
-        try {
-            const hash    = await calcularHash(caminho);
-            const tamanho = fs.statSync(caminho).size;
-
-            const dados = {
-                nome:       nomeArquivo,
-                plataforma: EXTENSOES[ext],
-                regiao:     extrairRegiao(nomeArquivo),
-                caminho,
-                extensao:   ext,
-                tamanho,
-                hash_md5:   hash,
-            };
-
-            const inserido = romModel.inserirRom(dados);
-
-            if (inserido) {
-                resultado.novos++;
-                resultado.lista.push({ ...dados, status: 'novo' });
-                console.log(`✅ ${nomeArquivo} [${EXTENSOES[ext]}]`);
-
-                const meta = await buscarMetadados(nomeArquivo, EXTENSOES[ext]);
-                if (meta) {
-                    const roms = romModel.buscarRoms({ nome: nomeArquivo });
-                    if (roms.length > 0) {
-                        romModel.atualizarMetadados(roms[0].id, meta);
-                        console.log(`   🖼️  Capa salva | 📝 ${meta.nota || 'sem classificação'}`);
-                    }
-                }
-            } else {
-                resultado.duplicatas++;
-                resultado.lista.push({ nome: nomeArquivo, status: 'duplicata' });
-                console.log(`⚠️  Duplicata: ${nomeArquivo}`);
-            }
-
-        } catch (err) {
+        } else if (r.status === 'erro') {
             resultado.erros++;
-            console.error(`❌ Erro em ${nomeArquivo}:`, err.message);
         }
+    }
+
+    if (novas.length > 0) {
+        console.log(`\n🔍 Buscando metadados de ${novas.length} ROMs...\n`);
+        await buscarMetadatasEmLote(novas);
     }
 
     return resultado;
@@ -134,10 +221,10 @@ async function verificarIntegridade() {
     const roms      = romModel.todasRoms();
     const resultado = [];
 
-    for (const rom of roms) {
+    await processarEmLote(roms, 5, async (rom) => {
         if (!fs.existsSync(rom.caminho)) {
             resultado.push({ ...rom, status: 'nao_encontrada' });
-            continue;
+            return;
         }
 
         const hashAtual = await calcularHash(rom.caminho);
@@ -145,7 +232,7 @@ async function verificarIntegridade() {
             ...rom,
             status: hashAtual === rom.hash_md5 ? 'ok' : 'corrompida'
         });
-    }
+    });
 
     return resultado;
 }
